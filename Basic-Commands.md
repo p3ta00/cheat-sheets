@@ -34,3 +34,8 @@ VHOST
 ```
 sudo ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u http://mailroom.htb/ -H "Host: FUZZ.mailroom.htb" -fs 7748
 ```
+# Responder
+Location: /tools/responder
+```
+sudo ./Responder.py -wrf -v -I tun0
+```
