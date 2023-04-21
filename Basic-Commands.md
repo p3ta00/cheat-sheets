@@ -14,6 +14,9 @@ impacket-secretsdump local -system SYSTEM -ntds ntds.dit
 ```
 impacket-secretsdump local -system registry/SYSTEM -ntds Active\ Directory/ntds.dit
 ```
+```
+impacket-secretsdump local -system SYSTEM -sam SAM
+```
 
 PSexec
 ```
