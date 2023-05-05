@@ -556,10 +556,10 @@ PS C:\htb> wmic qfe list brief
 PS C:\htb> Get-Hotfix
 ```
 We can search for each KB (Microsoft Knowledge Base ID number) in the Microsoft Update Catalog to get a better idea of what fixes have been installed and how far behind the system may be on security updates. A search for KB5000808 shows us that this is an update from March of 2021, which means the system is likely far behind on security updates.
-### Microsoft CVE-2020-0668: Windows Kernel Elevation of Privilege Vulnerability,
+# Microsoft CVE-2020-0668: Windows Kernel Elevation of Privilege Vulnerability,
 
 https://github.com/RedCursorSecurityConsulting/CVE-2020-0668
-## Maintenanceservice.exe
+### Maintenanceservice.exe
 ### Checking Permissions of Binary
 ```
 icacls "c:\Program Files (x86)\Mozilla Maintenance Service\maintenanceservice.exe"
