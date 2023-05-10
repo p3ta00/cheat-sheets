@@ -216,6 +216,9 @@ reg save HKLM\SYSTEM SYSTEM.SAV
 ```
 reg save HKLM\SAM SAM.SAV
 ```
+```
+reg save HKLM\SECURITY SECURITY.SAVE
+```
 It's worth noting that if a folder or file has an explicit deny entry for our current user or a group they belong to, this will prevent us from accessing it, even if the FILE_FLAG_BACKUP_SEMANTICS flag is specified.
 ## Extracting Credentials from NTDS.dit
 ```
