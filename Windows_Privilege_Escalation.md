@@ -1,3 +1,7 @@
+# Sharphound
+```
+.\SharpHound.exe -c All
+```
 # Change users password
 ```
 net user administrator password
