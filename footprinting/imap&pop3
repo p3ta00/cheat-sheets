@@ -1,0 +1,11 @@
+# NMAP
+```
+sudo nmap 10.129.130.20 -sV -p110,143,993,995 -sC
+```
+# OpenSSL
+```
+openssl s_client -connect 10.129.130.20:pop3s
+```
+```
+openssl s_client -connect 10.129.130.20:imaps
+```
