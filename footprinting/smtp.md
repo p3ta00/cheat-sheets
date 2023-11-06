@@ -1,3 +1,7 @@
+# Telnet
+```
+telnet <FQDN/IP> 25
+```
 # Metasploit
 ```
 [msf](Jobs:0 Agents:0) >> search smtp_enum
