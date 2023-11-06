@@ -1,0 +1,32 @@
+# RDP Security Check (Windows)
+```
+p3tA00@htb[/htb]$ git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check
+p3tA00@htb[/htb]$ ./rdp-sec-check.pl 10.129.201.248
+```
+# SSH Security Check (Linux)
+```
+[!bash!]$ git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit
+[!bash!]$ ./ssh-audit.py 10.129.14.132
+```
+
+# Enumerate for Rsync
+```
+sudo nmap -sV -p 873 127.0.0.1
+```
+### Prob accessible shares
+```
+nc -nv 127.0.0.1 873
+```
+### Enumerating open share
+```
+rsync -av --list-only rsync://127.0.0.1/dev
+```
+# Enumerate for R-Services
+```
+sudo nmap -sV -p 512,513,514 10.0.17.2
+```
+### Rlogin
+```
+rlogin 10.0.17.2 -l htb-student
+```
+
