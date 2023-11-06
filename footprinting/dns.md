@@ -12,3 +12,7 @@ dig axfr internal.inlanefreight.htb @10.129.42.195
 ```
 dnsenum --dnsserver 10.129.42.195 --enum -p 0 -s 0 -o subdomains.txt -f /usr/share/wordlists/seclists/Discovery/DNS/fierce-hostlist.txt dev.inlanefreight.htb --threads 90
 ```
+# SubDomain bruteforcing
+```
+dnsenum --dnsserver <nameserver> --enum -p 0 -s 0 -o found_subdomains.txt -f ~/subdomains.list <domain.tld>
+```
